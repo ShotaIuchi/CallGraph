@@ -2,7 +2,8 @@
 
 go mod download
 
-GOTARGET="darwin/amd64 linux/amd64 windows/amd64"
+# GOTARGET="darwin/amd64 linux/amd64 windows/amd64"
+GOTARGET="darwin/amd64"
 
 for target in $GOTARGET; do
   GOOS=${target%/*}
