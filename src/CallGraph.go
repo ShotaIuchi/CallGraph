@@ -16,6 +16,7 @@ type LogEntry struct {
 	ContextParentID uint64 `json:"ContextParentID"`
 }
 
+// Load the log file
 func load_log(filePath string) ([]LogEntry, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -51,18 +52,21 @@ func load_log(filePath string) ([]LogEntry, error) {
 func main() {
 	inFilePath := os.Args[1]
 
+	// Get the absolute path of the input file
 	filePath, err := LFilePath.Abs(inFilePath)
 	if err != nil {
 		fmt.Println("Error absolute path:", err)
 		return
 	}
 
+	// Load the log file
 	entries, err := load_log(filePath)
 	if err != nil {
 		fmt.Println("Error reading file:", err)
 		return
 	}
 
+	// Create a map of stacks and graphs
 	stacks := make(map[uint64][]string)
 	graphs := make(map[uint64][]string)
 
@@ -80,6 +84,7 @@ func main() {
 		}
 	}
 
+	// Print the graphs
 	for graph := range graphs {
 		for _, line := range graphs[graph] {
 			fmt.Println(line)
