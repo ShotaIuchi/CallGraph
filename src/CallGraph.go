@@ -1,31 +1,66 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"fmt"
+	"os"
+	LFilePath "path/filepath"
 	"strings"
 )
 
 type LogEntry struct {
-	Type            string
-	Function        string
-	ContextID       uint64
-	ContextParentID uint64
+	Type            string `json:"Type"`
+	Function        string `json:"Function"`
+	ContextID       uint64 `json:"ContextID"`
+	ContextParentID uint64 `json:"ContextParentID"`
+}
+
+func load_log(filePath string) ([]LogEntry, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var entries []LogEntry
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if idx := strings.Index(line, "CALL_GRAPH:"); idx != -1 {
+			jsonPart := strings.TrimSpace(line[idx+len("CALL_GRAPH:"):])
+
+			var entry LogEntry
+			if err := json.Unmarshal([]byte(jsonPart), &entry); err != nil {
+				fmt.Printf("Error parsing JSON on line: %s\nError: %v\n", line, err)
+				continue
+			}
+
+			entries = append(entries, entry)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return entries, nil
 }
 
 func main() {
-	entries := []LogEntry{
-		{Type: "S", Function: "FuncA", ContextID: 1},
-		{Type: "S", Function: "FuncA-1", ContextID: 1},
-		{Type: "S", Function: "FuncA-1-1", ContextID: 2},
-		{Type: "E", Function: "FuncA-1-1", ContextID: 2},
-		{Type: "S", Function: "FuncA-1-2", ContextID: 1},
-		{Type: "E", Function: "FuncA-1-2", ContextID: 1},
-		{Type: "E", Function: "FuncA-1", ContextID: 1},
-		{Type: "S", Function: "FuncA-2", ContextID: 1},
-		{Type: "E", Function: "FuncA-2", ContextID: 1},
-		{Type: "E", Function: "FuncA", ContextID: 1},
-		{Type: "S", Function: "FuncB", ContextID: 1},
-		{Type: "E", Function: "FuncB", ContextID: 1},
+	inFilePath := os.Args[1]
+
+	filePath, err := LFilePath.Abs(inFilePath)
+	if err != nil {
+		fmt.Println("Error absolute path:", err)
+		return
+	}
+
+	entries, err := load_log(filePath)
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return
 	}
 
 	stacks := make(map[uint64][]string)
