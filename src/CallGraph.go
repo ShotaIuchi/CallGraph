@@ -16,6 +16,38 @@ type LogEntry struct {
 	ContextParentID uint64 `json:"ContextParentID"`
 }
 
+type CallGraph interface {
+	Constructor()
+	StartFunction(int, LogEntry)
+	EndFunction(LogEntry)
+	PrintGraph()
+}
+
+type CallGraphText struct {
+	graphs map[uint64][]string
+}
+
+func (cg *CallGraphText) Constructor() {
+	cg.graphs = make(map[uint64][]string)
+}
+
+func (cg *CallGraphText) StartFunction(stackSize int, entry LogEntry) {
+	graph := fmt.Sprintf("%s- %s", strings.Repeat("  ", stackSize), entry.Function)
+	cg.graphs[entry.ContextID] = append(cg.graphs[entry.ContextID], graph)
+}
+
+func (cg *CallGraphText) EndFunction(entry LogEntry) {
+	// cg.graphs[entry.ContextID] = entry
+}
+
+func (cg *CallGraphText) PrintGraph() {
+	for graph := range cg.graphs {
+		for _, line := range cg.graphs[graph] {
+			fmt.Println(line)
+		}
+	}
+}
+
 // Load the log file
 func load_log(filePath string) ([]LogEntry, error) {
 	file, err := os.Open(filePath)
@@ -68,14 +100,15 @@ func main() {
 
 	// Create a map of stacks and graphs
 	stacks := make(map[uint64][]string)
-	graphs := make(map[uint64][]string)
+	// graphs := make(map[uint64][]string)
+	graphs := CallGraphText{}
+	graphs.Constructor()
 
 	for _, entry := range entries {
 		if entry.Type == "S" {
 			stacks[entry.ContextID] = append(stacks[entry.ContextID], entry.Function)
 			stack := stacks[entry.ContextID]
-			graph := fmt.Sprintf("%s- %s", strings.Repeat("  ", len(stack)-1), entry.Function)
-			graphs[entry.ContextID] = append(graphs[entry.ContextID], graph)
+			graphs.StartFunction(len(stack)-1, entry)
 		} else if entry.Type == "E" {
 			stack := stacks[entry.ContextID]
 			if len(stack) > 0 {
@@ -85,9 +118,10 @@ func main() {
 	}
 
 	// Print the graphs
-	for graph := range graphs {
-		for _, line := range graphs[graph] {
-			fmt.Println(line)
-		}
-	}
+	graphs.PrintGraph()
+	// for graph := range graphs {
+	// 	for _, line := range graphs[graph] {
+	// 		fmt.Println(line)
+	// 	}
+	// }
 }
