@@ -16,6 +16,69 @@ type LogEntry struct {
 	ContextParentID uint64 `json:"ContextParentID"`
 }
 
+type CallGraph interface {
+	Constructor()
+	StartFunction(int, LogEntry, LogEntry)
+	EndFunction(LogEntry, LogEntry)
+	PrintGraph()
+}
+
+type CallGraphText struct {
+	graphs map[uint64][]string
+}
+
+func (cg *CallGraphText) Constructor() {
+	cg.graphs = make(map[uint64][]string)
+}
+
+func (cg *CallGraphText) StartFunction(depth int, pEntry LogEntry, cEntry LogEntry) {
+	graph := fmt.Sprintf("%s- %s", strings.Repeat("  ", depth), cEntry.Function)
+	cg.graphs[cEntry.ContextID] = append(cg.graphs[cEntry.ContextID], graph)
+}
+
+func (cg *CallGraphText) EndFunction(pEntry LogEntry, cEntry LogEntry) {
+}
+
+func (cg *CallGraphText) PrintGraph() {
+	for graph := range cg.graphs {
+		for _, line := range cg.graphs[graph] {
+			fmt.Println(line)
+		}
+	}
+}
+
+type CallGraphPlantUML struct {
+	graphs map[uint64][]string
+}
+
+func (cg *CallGraphPlantUML) Constructor() {
+	cg.graphs = make(map[uint64][]string)
+}
+
+func (cg *CallGraphPlantUML) StartFunction(depth int, pEntry LogEntry, cEntry LogEntry) {
+	if pEntry.Function != "" {
+		graph := fmt.Sprintf("%s -> %s", pEntry.Function, cEntry.Function)
+		cg.graphs[cEntry.ContextID] = append(cg.graphs[cEntry.ContextID], graph)
+	}
+}
+
+func (cg *CallGraphPlantUML) EndFunction(pEntry LogEntry, cEntry LogEntry) {
+	if pEntry.Function != "" {
+		graph := fmt.Sprintf("%s <- %s", pEntry.Function, cEntry.Function)
+		cg.graphs[cEntry.ContextID] = append(cg.graphs[cEntry.ContextID], graph)
+	}
+}
+
+func (cg *CallGraphPlantUML) PrintGraph() {
+	fmt.Println("@startuml")
+	for graph := range cg.graphs {
+		for _, line := range cg.graphs[graph] {
+			fmt.Println(line)
+		}
+	}
+	fmt.Println("@enduml")
+}
+
 // Load the log file
 func load_log(filePath string) ([]LogEntry, error) {
 	file, err := os.Open(filePath)
@@ -67,27 +130,38 @@ func main() {
 	}
 
 	// Create a map of stacks and graphs
-	stacks := make(map[uint64][]string)
-	graphs := make(map[uint64][]string)
+	stacks := make(map[uint64][]LogEntry)
 
-	for _, entry := range entries {
-		if entry.Type == "S" {
-			stacks[entry.ContextID] = append(stacks[entry.ContextID], entry.Function)
-			stack := stacks[entry.ContextID]
-			graph := fmt.Sprintf("%s- %s", strings.Repeat("  ", len(stack)-1), entry.Function)
-			graphs[entry.ContextID] = append(graphs[entry.ContextID], graph)
-		} else if entry.Type == "E" {
-			stack := stacks[entry.ContextID]
+	// Create a CallGraph object
+	var graphs CallGraph = nil
+	// graphs = &CallGraphText{}
+	graphs = &CallGraphPlantUML{}
+	graphs.Constructor()
+
+	// Iterate over the entries
+	for _, cEntry := range entries {
+		if cEntry.Type == "S" {
+			var pEntry LogEntry = LogEntry{}
+			if len(stacks[cEntry.ContextID]) > 0 {
+				pEntry = stacks[cEntry.ContextID][len(stacks[cEntry.ContextID])-1]
+			}
+			stacks[cEntry.ContextID] = append(stacks[cEntry.ContextID], cEntry)
+			stack := stacks[cEntry.ContextID]
+			graphs.StartFunction(len(stack)-1, pEntry, cEntry)
+		} else if cEntry.Type == "E" {
+			stack := stacks[cEntry.ContextID]
 			if len(stack) > 0 {
-				stacks[entry.ContextID] = stack[:len(stack)-1]
+				cEntry := stack[len(stack)-1]
+				stacks[cEntry.ContextID] = stack[:len(stack)-1]
+				var pEntry LogEntry = LogEntry{}
+				if len(stacks[cEntry.ContextID]) > 0 {
+					pEntry = stacks[cEntry.ContextID][len(stacks[cEntry.ContextID])-1]
+				}
+				graphs.EndFunction(pEntry, cEntry)
 			}
 		}
 	}
 
 	// Print the graphs
-	for graph := range graphs {
-		for _, line := range graphs[graph] {
-			fmt.Println(line)
-		}
-	}
+	graphs.PrintGraph()
 }

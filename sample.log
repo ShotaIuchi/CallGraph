@@ -1,12 +1,8 @@
 CALL_GRAPH:{"Type": "S", "Function": "FuncA", "ContextID": 1}
-CALL_GRAPH:{"Type": "S", "Function": "FuncA-1", "ContextID": 1}
-CALL_GRAPH:{"Type": "S", "Function": "FuncA-1-1", "ContextID": 2}
-CALL_GRAPH:{"Type": "E", "Function": "FuncA-1-1", "ContextID": 2}
-{"Type": "S", "Function": "FuncA-1-2", "ContextID": 1}
-:{"Type": "E", "Function": "FuncA-1-2", "ContextID": 1}
-CALL_GRAPH:{"Type": "E", "Function": "FuncA-1", "ContextID": 1}
-CALL_GRAPH:{"Type": "S", "Function": "FuncA-2", "ContextID": 1}
-CALL_GRAPH:{"Type": "E", "Function": "FuncA-2", "ContextID": 1}
-CALL_GRAPH:{"Type": "E", "Function": "FuncA", "ContextID": 1}
 CALL_GRAPH:{"Type": "S", "Function": "FuncB", "ContextID": 1}
+CALL_GRAPH:{"Type": "S", "Function": "FuncC", "ContextID": 1}
+CALL_GRAPH:{"Type": "E", "Function": "FuncC", "ContextID": 1}
+CALL_GRAPH:{"Type": "S", "Function": "FuncD", "ContextID": 1}
+CALL_GRAPH:{"Type": "E", "Function": "FuncD", "ContextID": 1}
 CALL_GRAPH:{"Type": "E", "Function": "FuncB", "ContextID": 1}
+CALL_GRAPH:{"Type": "E", "Function": "FuncA", "ContextID": 1}
