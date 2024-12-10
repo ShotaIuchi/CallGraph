@@ -11,15 +11,18 @@ import (
 
 type LogEntry struct {
 	Type            string `json:"Type"`
-	Function        string `json:"Function"`
+	Action          string `json:"Action"`
 	ContextID       string `json:"ContextID"`
 	ContextParentID string `json:"ContextParentID"`
+	Message         string `json:"Message"`
+	Timestamp       uint64 `json:"Timestamp"`
 }
 
 type CallGraph interface {
 	Constructor()
-	StartFunction(int, LogEntry, LogEntry)
-	EndFunction(LogEntry, LogEntry)
+	StartAction(int, LogEntry, LogEntry)
+	EndAction(LogEntry, LogEntry)
+	IFAction(LogEntry, LogEntry)
 	PrintGraph()
 }
 
@@ -31,12 +34,19 @@ func (cg *CallGraphText) Constructor() {
 	cg.graphs = make(map[string][]string)
 }
 
-func (cg *CallGraphText) StartFunction(depth int, pEntry LogEntry, cEntry LogEntry) {
-	graph := fmt.Sprintf("%s- %s", strings.Repeat("  ", depth), cEntry.Function)
+func (cg *CallGraphText) StartAction(depth int, pEntry LogEntry, cEntry LogEntry) {
+	var time uint64
+	if pEntry.Action != "" {
+		time = cEntry.Timestamp - pEntry.Timestamp
+	}
+	graph := fmt.Sprintf("%s- %s: %s (T:%d)", strings.Repeat("  ", depth), cEntry.Action, cEntry.Message, time)
 	cg.graphs[cEntry.ContextID] = append(cg.graphs[cEntry.ContextID], graph)
 }
 
-func (cg *CallGraphText) EndFunction(pEntry LogEntry, cEntry LogEntry) {
+func (cg *CallGraphText) EndAction(pEntry LogEntry, cEntry LogEntry) {
+}
+
+func (cg *CallGraphText) IFAction(pEntry LogEntry, cEntry LogEntry) {
 }
 
 func (cg *CallGraphText) PrintGraph() {
@@ -55,16 +65,26 @@ func (cg *CallGraphPlantUML) Constructor() {
 	cg.graphs = make(map[string][]string)
 }
 
-func (cg *CallGraphPlantUML) StartFunction(depth int, pEntry LogEntry, cEntry LogEntry) {
-	if pEntry.Function != "" {
-		graph := fmt.Sprintf("%s -> %s", pEntry.Function, cEntry.Function)
+func (cg *CallGraphPlantUML) StartAction(depth int, pEntry LogEntry, cEntry LogEntry) {
+	if pEntry.Action != "" {
+		time := cEntry.Timestamp - pEntry.Timestamp
+		graph := fmt.Sprintf("%s -> %s : %s (T:%d)", pEntry.Action, cEntry.Action, cEntry.Message, time)
 		cg.graphs[cEntry.ContextID] = append(cg.graphs[cEntry.ContextID], graph)
 	}
 }
 
-func (cg *CallGraphPlantUML) EndFunction(pEntry LogEntry, cEntry LogEntry) {
-	if pEntry.Function != "" {
-		graph := fmt.Sprintf("%s <- %s", pEntry.Function, cEntry.Function)
+func (cg *CallGraphPlantUML) EndAction(pEntry LogEntry, cEntry LogEntry) {
+	if pEntry.Action != "" {
+		time := cEntry.Timestamp - pEntry.Timestamp
+		graph := fmt.Sprintf("%s <- %s : %s (T:%d)", pEntry.Action, cEntry.Action, cEntry.Message, time)
+		cg.graphs[cEntry.ContextID] = append(cg.graphs[cEntry.ContextID], graph)
+	}
+}
+
+func (cg *CallGraphPlantUML) IFAction(pEntry LogEntry, cEntry LogEntry) {
+	if pEntry.Action != "" {
+		time := cEntry.Timestamp - pEntry.Timestamp
+		graph := fmt.Sprintf("%s -> %s : %s (T:%d)\\n%s", pEntry.Action, pEntry.Action, cEntry.Action, time, cEntry.Message)
 		cg.graphs[cEntry.ContextID] = append(cg.graphs[cEntry.ContextID], graph)
 	}
 }
@@ -131,6 +151,7 @@ func main() {
 
 	// Create a map of stacks and graphs
 	stacks := make(map[string][]LogEntry)
+	stacksBef := make(map[string]LogEntry)
 
 	// Create a CallGraph object
 	var graphs CallGraph = nil
@@ -140,15 +161,15 @@ func main() {
 
 	// Iterate over the entries
 	for _, cEntry := range entries {
-		if cEntry.Type == "S" {
+		if cEntry.Type == "ST" {
 			var pEntry LogEntry = LogEntry{}
 			if len(stacks[cEntry.ContextID]) > 0 {
 				pEntry = stacks[cEntry.ContextID][len(stacks[cEntry.ContextID])-1]
 			}
 			stacks[cEntry.ContextID] = append(stacks[cEntry.ContextID], cEntry)
 			stack := stacks[cEntry.ContextID]
-			graphs.StartFunction(len(stack)-1, pEntry, cEntry)
-		} else if cEntry.Type == "E" {
+			graphs.StartAction(len(stack)-1, pEntry, cEntry)
+		} else if cEntry.Type == "ED" {
 			stack := stacks[cEntry.ContextID]
 			if len(stack) > 0 {
 				cEntry := stack[len(stack)-1]
@@ -157,9 +178,14 @@ func main() {
 				if len(stacks[cEntry.ContextID]) > 0 {
 					pEntry = stacks[cEntry.ContextID][len(stacks[cEntry.ContextID])-1]
 				}
-				graphs.EndFunction(pEntry, cEntry)
+				graphs.EndAction(pEntry, cEntry)
+			}
+		} else if cEntry.Type == "DO" {
+			if stack, ok := stacksBef[cEntry.ContextID]; ok {
+				graphs.IFAction(stack, cEntry)
 			}
 		}
+		stacksBef[cEntry.ContextID] = cEntry
 	}
 
 	// Print the graphs

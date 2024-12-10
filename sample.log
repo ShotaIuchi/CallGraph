@@ -1,8 +1,9 @@
-CALL_GRAPH:{"Type": "S", "Function": "FuncA", "ContextID": "1"}
-CALL_GRAPH:{"Type": "S", "Function": "FuncB", "ContextID": "1"}
-CALL_GRAPH:{"Type": "S", "Function": "FuncC", "ContextID": "1"}
-CALL_GRAPH:{"Type": "E", "Function": "FuncC", "ContextID": "1"}
-CALL_GRAPH:{"Type": "S", "Function": "FuncD", "ContextID": "1"}
-CALL_GRAPH:{"Type": "E", "Function": "FuncD", "ContextID": "1"}
-CALL_GRAPH:{"Type": "E", "Function": "FuncB", "ContextID": "1"}
-CALL_GRAPH:{"Type": "E", "Function": "FuncA", "ContextID": "1"}
+CALL_GRAPH:{"Type": "ST", "Action": "FuncA", "ContextID": "1", "Timestamp": 10, "Message": "Start FuncA"}
+CALL_GRAPH:{"Type": "ST", "Action": "FuncB", "ContextID": "1", "Timestamp": 13, "Message": "Start FuncB"}
+CALL_GRAPH:{"Type": "ST", "Action": "FuncC", "ContextID": "1", "Timestamp": 19, "Message": "Start FuncC"}
+CALL_GRAPH:{"Type": "DO", "Action": "xxxxx", "ContextID": "1", "Timestamp": 29, "Message": "Do something"}
+CALL_GRAPH:{"Type": "ED", "Action": "FuncC", "ContextID": "1", "Timestamp": 30, "Message": "End FuncC"}
+CALL_GRAPH:{"Type": "ST", "Action": "FuncD", "ContextID": "1", "Timestamp": 30, "Message": "Start FuncD"}
+CALL_GRAPH:{"Type": "ED", "Action": "FuncD", "ContextID": "1", "Timestamp": 31, "Message": "End FuncD"}
+CALL_GRAPH:{"Type": "ED", "Action": "FuncB", "ContextID": "1", "Timestamp": 32, "Message": "End FuncB"}
+CALL_GRAPH:{"Type": "ED", "Action": "FuncA", "ContextID": "1", "Timestamp": 40, "Message": "End FuncA"}
