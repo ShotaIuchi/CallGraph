@@ -12,8 +12,8 @@ import (
 type LogEntry struct {
 	Type            string `json:"Type"`
 	Function        string `json:"Function"`
-	ContextID       uint64 `json:"ContextID"`
-	ContextParentID uint64 `json:"ContextParentID"`
+	ContextID       string `json:"ContextID"`
+	ContextParentID string `json:"ContextParentID"`
 }
 
 type CallGraph interface {
@@ -24,11 +24,11 @@ type CallGraph interface {
 }
 
 type CallGraphText struct {
-	graphs map[uint64][]string
+	graphs map[string][]string
 }
 
 func (cg *CallGraphText) Constructor() {
-	cg.graphs = make(map[uint64][]string)
+	cg.graphs = make(map[string][]string)
 }
 
 func (cg *CallGraphText) StartFunction(depth int, pEntry LogEntry, cEntry LogEntry) {
@@ -48,11 +48,11 @@ func (cg *CallGraphText) PrintGraph() {
 }
 
 type CallGraphPlantUML struct {
-	graphs map[uint64][]string
+	graphs map[string][]string
 }
 
 func (cg *CallGraphPlantUML) Constructor() {
-	cg.graphs = make(map[uint64][]string)
+	cg.graphs = make(map[string][]string)
 }
 
 func (cg *CallGraphPlantUML) StartFunction(depth int, pEntry LogEntry, cEntry LogEntry) {
@@ -130,7 +130,7 @@ func main() {
 	}
 
 	// Create a map of stacks and graphs
-	stacks := make(map[uint64][]LogEntry)
+	stacks := make(map[string][]LogEntry)
 
 	// Create a CallGraph object
 	var graphs CallGraph = nil
