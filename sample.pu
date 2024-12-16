@@ -1,7 +1,7 @@
 @startuml
 FuncA -> FuncB : Start FuncB (T:3)
 FuncB -> FuncC : Start FuncC (T:6)
-FuncC -> FuncC : xxxxx (T:10)\nDo something
+FuncC -> FuncC : Hoge (T:10)\nDo something
 FuncB <- FuncC : Start FuncC (T:6)
 FuncB -> FuncD : Start FuncD (T:17)
 FuncB <- FuncD : Start FuncD (T:17)
